@@ -1,6 +1,7 @@
-# **api_basemodel_for_machine_learning_with_fastapi**
+# **Base model for a secured machine learning API with FastAPI**
+### ***api_basemodel_for_machine_learning_with_fastapi (v0.1)***
 
-This is a template to integrate 2 machine learning services in a secured API.
+This template serves as a starting point to integrate ML services into a secured API.
 
 1. [**Installation**](#installation)
 2. [**Getting started**](#getting-started)
@@ -56,7 +57,6 @@ This is a template to integrate 2 machine learning services in a secured API.
 git clone ...
 
 chmod +x run.sh
-chmod +x run_tests.sh
 
 ```
 
@@ -169,7 +169,7 @@ class ServiceCall(Base):
 
 #### **A. Users**
 
-- The username must be an email address
+- The **username is actually an email address**, the email format is enforced. It must be unique.
 - The columns `role`, `has_access_v1` and `has_access_v2` influence endpoint access and permissions (see security and credentials)
 
 Users register themselves at this endpoint `/auth/create`, here is the form schema:
@@ -195,14 +195,43 @@ class ChangeUserAccessRights(BaseModel):
 
 
 #### **B. ServiceCalls**
-This table creates a row with basic information for every service call, and collects raw data t information that can be aggregated into insightful user activity info.
+The **`ServiceCalls`** table serves as a comprehensive log, recording essential details for every service call made. It captures information crucial for deriving insights into both user-specific activity and global service usage patterns.
 
 ![alt text](<readme/7.png>)
+
+The goal of this template is to serve as many purposes as possible without having to remove content. 
+It is however easy to implement related tables that track user activity and service usage with more granularity.
+Here's an example:  
+```py
+from sqlalchemy import Column, Integer, ForeignKey
+from sqlalchemy.orm import relationship
+
+class UserSpecificAnalytics(Base):
+    """Table for user-specific analytics."""
+    __tablename__ = 'user_specific_analytics'
+    
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey('users.id'))
+    total_service_calls = Column(Integer)
+    
+    user = relationship('User', back_populates='specific_analytics')
+
+
+class GlobalServiceUsageAnalytics(Base):
+    """Table for global service usage analytics."""
+    __tablename__ = 'global_service_analytics'
+    
+    id = Column(Integer, primary_key=True)
+    hour_of_day = Column(Integer)
+    day_of_week = Column(Integer)
+    service_version = Column(String(2))
+    total_service_calls = Column(Integer)
+```
 
 
 ### **3.2 Router structure**
 
-To achieve separation of concenrn and improved code organization, endpoints and helper functions are grouped into logical modules with their own namespaces (ex `/admin/...`):
+To achieve separation of concern and improved code organization, endpoints and helper functions are grouped into logical modules with their own namespaces (ex `/admin/...`):
 
 - **auth** router file for registration / security related helpers and endpoint functions (see below)
 - **admin** router file for admin specific actions, like grant/revoke access rights, delete user
@@ -224,7 +253,6 @@ The API prioritizes security by utilizing various mechanisms:
 
 - JWTs are used for user authentication. Users receive a JWT token after successful login, containing user information (username, ID, role, access rights) and an expiration time. Subsequent requests require including this token in the authorization header for verification.
 
-**Code Snippet (auth.py):**
 ```py
 `# from auth.py
 from jose import jwt, JWTError
@@ -261,9 +289,7 @@ async def get_current_user(
 
 - The API leverages RBAC to control user access to resources. User roles (e.g., "admin," "user") and access rights (e.g., `has_access_v1`, `has_access_v2`) are stored within the JWT token. Dependency injection in routers verifies a user's token and permissions before processing requests.
 
-**Code Snippet (routers/ml_service_v1.py):**
 
-**Python**
 ```py
 `# ... other imports
 from ..auth import get_current_user
@@ -284,7 +310,6 @@ async def make_prediction_v1(prediction_input: PredictionInput, user: user_depen
 **4. Dependency Injection for Security:**
 - Dependency injection (DI) strengthens security by promoting:
     - **Improved Modularity:** Security logic for creating database connections, user objects, or JWT tokens resides in dedicated functions, making them easier to test and isolate vulnerabilities.
-    - **Controlled Object Lifecycle:** DI allows for secure object management (e.g., closing database connections after use, invalidating JWT tokens upon logout).
     - **Clear Authorization Logic:** Dependencies like `user_dependency` inject user information into routes. You can then leverage the user's role or access rights within the route logic for clean and centralized authorization checks.
 
 **5. Environment Variables:**
@@ -293,6 +318,50 @@ async def make_prediction_v1(prediction_input: PredictionInput, user: user_depen
 
 By implementing these security measures, the API provides a robust authentication and authorization system to protect user data and resources.
 
+The files containing the environment variables are found in `.environment` directory. 
+
+**[Caution] Don't forget to add the files containing the sensitive environment variables into the gitignore!**
+
+
+### **3.3. Tests**
+
+Run a test session with pytest:
+```bash
+chmod +x run_tests.sh
+
+./run_tests.sh
+
+# or in verbose mode:
+./run_tests./sh -v 
+```
+
+
+####  **Test Setup and Fixtures:**
+
+- Test context and fixtures are declared in `test/utils.py`. For convenience within test files, it's recommended to use `from .utils import *` at the beginning.
+
+#### **Potential Test Failure Points:**
+
+During test development or codebase changes, a test might fail even though the endpoint functions correctly in real-world scenarios. Here are common reasons for such failures:
+
+1. **Dependency Override Issues:**
+    - The `get_current_user` dependency is used to grant or revoke user access rights within tests.
+    - If a test fails due to unexpected access permissions, ensure the dependency override in `test/utils.py` is set up correctly with the desired access level before the test function or class definition.
+2. **User Fixture Misconfiguration:**
+    - User fixtures in `test/utils.py` provide pre-defined user objects for testing purposes.
+    - If a test fails due to user access issues, verify the user fixture configuration in `test/utils.py` aligns with the expected access rights for the test. Different fixtures might be available for granting or revoking specific permissions.
+3. **Database Issues:**
+    - Tests should ensure the database is properly populated with relevant data before each test and purged of any leftover data afterwards.
+    - Utilize a context manager like `TestingSessionLocal` to achieve this. The provided code snippet demonstrates this approach.
+    
+```py
+from .utils import TestingSessionLocal
+
+def test...():
+    with TestingSessionLocal() as db:
+        user = db.query(User).filter_by(username=user_data['username']).first()
+        assert ...
+```
 
 ## **What must be implemented?** <a name="what-must-be-implemented"></a>
 
@@ -350,6 +419,8 @@ Specific schemas should be created to match the model's input (ex categorical / 
 
 Here's an example:
 ```py
+from pydantic import BaseModel
+
 class HousePricePredictionInput(BaseModel):
     age: int
     surface: float
@@ -369,8 +440,16 @@ By leveraging asynchronicity and lazy loading, the system ensures efficient reso
 For now, only one User and one ServiceCall tables are implemented.  
 Based on the type of predictor to implement, the model activity and performance should also be logged in another table.  
 
-Taking the example of the house price prediction, we would be interested to compare the price predictions and the actual sale price later. A new table could be created like this:
+Taking the example of the house price prediction, we'd like to store the predicted prices, and get information about the model performances once the actual sale price is known . A new table could be created like this:
 ```py
+# file: database.py
+from sqlalchemy.orm import declarative_base
+Base =  declarative_base()
+...
+
+# file: models.py
+from database import Base
+
 class MLModelLog(Base):
     __tablename__ = 'model_logs'
     
@@ -388,3 +467,6 @@ class MLModelLog(Base):
     feature_address: Mapped[str] = mapped_column(String)
     service_call = relationship('ServiceCall', back_populates='service_calls')
 ```
+
+
+
