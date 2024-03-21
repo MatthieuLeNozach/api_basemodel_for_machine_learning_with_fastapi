@@ -62,7 +62,21 @@ chmod +x run.sh
 
 ## **Getting started** <a name="getting-started"></a>
 
-### **Run app in development mode**
+### **A. Securize the project**
+- **Add `.environment` folder to the `.gitignore` file** to stop exposing sensitive information to git commits 
+- **Access the `.environment` folder** from repository root, the folder may be hidden. 
+```bash
+nano .environment/env.dev
+
+nano .environment/env.test 
+```
+
+- **Replace the dummy secret keys with your own keys**. You can generate base64 secrets with this command:
+```bash
+openssl rand -base64 32
+```
+
+### **B. Run app in development mode**
 
 `superuser` argument initializes an admin at startup and deletes it at shutdown.
 
