@@ -5,3 +5,8 @@ pytest==8.1.1
 python-dotenv==1.0.1
 python_jose==3.3.0
 SQLAlchemy==2.0.28
+uvicorn==0.28.0
+python-multipart==0.0.7
+
+email-validator==2.1.1
+

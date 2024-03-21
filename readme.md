@@ -86,16 +86,8 @@ def create_superuser(db: Session):
     db.commit()
 ```
 
-### **Run app in production mode with PostGreSQL server (#TODO)**
-
-```bash
-./run.sh prod
-```
 
 ### **The authentication flow**
-
-
-![alt text](<Screenshot from 2024-03-20 15-56-59.png>)
 
 
 #### **Authentication as Superuser**
@@ -132,7 +124,22 @@ Click on the lock
 
 ## **What's ready to use?** <a name="whats-ready-to-use"></a>
 
-### **3.1 Database**
+### **3.1 Endpoints and routers**
+
+#### **A. Router structure**
+
+To achieve separation of concerns and improved code organization, endpoints and helper functions are grouped into logical modules with their own namespaces (ex `/admin/...`):
+
+- **auth** router file for registration / security related helpers and endpoint functions (see below)
+- **admin** router file for admin specific actions, like grant/revoke access rights, delete user
+- **user** router file for user specific actions (change password, #TODO get service call history)
+- **ml_service_v1 / ml_service_v2**
+
+#### **B. Endpoints**
+![alt text](<readme/1.png>)
+
+
+### **3.2 Database**
 
 This template populates 2 SQL tables, one registers the users and the other the service calls
 
@@ -227,17 +234,6 @@ class GlobalServiceUsageAnalytics(Base):
     service_version = Column(String(2))
     total_service_calls = Column(Integer)
 ```
-
-
-### **3.2 Router structure**
-
-To achieve separation of concern and improved code organization, endpoints and helper functions are grouped into logical modules with their own namespaces (ex `/admin/...`):
-
-- **auth** router file for registration / security related helpers and endpoint functions (see below)
-- **admin** router file for admin specific actions, like grant/revoke access rights, delete user
-- **user** router file for user specific actions (change password, #TODO get service call history)
-- **ml_service_v1 / ml_service_v2**
-
 
 
 
@@ -335,7 +331,6 @@ chmod +x run_tests.sh
 ./run_tests./sh -v 
 ```
 
-
 ####  **Test Setup and Fixtures:**
 
 - Test context and fixtures are declared in `test/utils.py`. For convenience within test files, it's recommended to use `from .utils import *` at the beginning.
@@ -362,6 +357,17 @@ def test...():
         user = db.query(User).filter_by(username=user_data['username']).first()
         assert ...
 ```
+
+### **3.4 Docker container**
+Build and run  the api as a single container, for development purposes:
+```bash
+docker build -t ml_api_base:latest
+
+docker run ml_api_base:latest
+```
+
+
+
 
 ## **What must be implemented?** <a name="what-must-be-implemented"></a>
 
@@ -469,4 +475,48 @@ class MLModelLog(Base):
 ```
 
 
+### **4.3 Production database**
 
+#### **A. Database server**
+Move the database from SQLite to a server hosted database (ex PostGreSQL, MySQL...)
+
+Having such a structure also implies to have a migration tool setup...
+
+#### **B. Setup Alembic migration tool**
+Allowing a smooth scaling into new database functionalities
+
+- Installation:
+```bash
+pip install alembic
+# or
+conda install alembic
+# then
+alembic init alembic
+```
+
+- Make the necessary changes in `alembic.ini`
+  - adjust the database url:
+```ini
+...
+sqlalchemy.url = :///./your/path/to/prod_db.db
+...
+```
+etc
+- Create a migration script
+```bash
+alembic revision -m "initial migration"
+```  
+- in alembic's `env.py`, check that the `target_metadata` is set `models.Base.metadata`
+- Run the migration (upgrade to commit new structure or downgrade to rollback)
+```bash
+alembic upgrade head
+# or
+alembic downgrade head
+```
+
+### **4.4 Docker Compose**
+
+For now, the api can live inside a single container, for development purposes only. 
+Sensitive environment variables are currently exposed at image build,  they should be passed via a docker compose file instead of having them built-in. 
+
+Aside from security issues, a single docker container handling api endpoints, database management and machine learning predictions is far from ideal.
