@@ -1,5 +1,5 @@
 # **Base model for a secured machine learning API with FastAPI**
-### ***api_basemodel_for_machine_learning_with_fastapi (v0.1)***
+### ***api_basemodel_for_machine_learning_with_fastapi (v0.2)***
 
 This template serves as a starting point to integrate ML services into a secured API.
 
@@ -76,6 +76,20 @@ nano .environment/env.test
 openssl rand -base64 32
 ```
 
+- **Change the `superuser` password**. Modify the file `app/devtools.py` with the credentials of your choice:
+```py
+# from app/devtools.py
+def create_superuser(db: Session):
+    superuser = User(
+        username='superuser@example.com',
+        first_name='Super',
+        last_name='User',
+        hashed_password=pwd_context.hash('8888'),
+...
+```
+Only an admin can register another admin. A permanent admin can be created once logged-in as the `superuser`, by sending a `post` request to this address:
+`http://localhost:8080/admin/create`
+
 ### **B. Run app in development mode**
 
 `superuser` argument initializes an admin at startup and deletes it at shutdown.
@@ -150,6 +164,9 @@ To achieve separation of concerns and improved code organization, endpoints and 
 - **ml_service_v1 / ml_service_v2**
 
 #### **B. Endpoints**
+API endpoints documentation (see below), and HTTP request templates are available at this address:
+`http://localhost:8080/docs`
+
 ![alt text](<readme/1.png>)
 
 
@@ -190,7 +207,7 @@ class ServiceCall(Base):
 
 #### **A. Users**
 
-- The **username is actually an email address**, the email format is enforced. It must be unique.
+- The **username is an email address**, the email format is enforced. It must be unique.
 - The columns `role`, `has_access_v1` and `has_access_v2` influence endpoint access and permissions (see security and credentials)
 
 Users register themselves at this endpoint `/auth/create`, here is the form schema:
@@ -360,8 +377,8 @@ During test development or codebase changes, a test might fail even though the e
     - User fixtures in `test/utils.py` provide pre-defined user objects for testing purposes.
     - If a test fails due to user access issues, verify the user fixture configuration in `test/utils.py` aligns with the expected access rights for the test. Different fixtures might be available for granting or revoking specific permissions.
 3. **Database Issues:**
-    - Tests should ensure the database is properly populated with relevant data before each test and purged of any leftover data afterwards.
-    - Utilize a context manager like `TestingSessionLocal` to achieve this. The provided code snippet demonstrates this approach.
+    - Tests should ensure the database is properly populated with relevant data during each test and purged of any leftover data afterwards.
+    - Utilize a context manager like `TestingSessionLocal` to achieve this. Here's the approach:
     
 ```py
 from .utils import TestingSessionLocal
