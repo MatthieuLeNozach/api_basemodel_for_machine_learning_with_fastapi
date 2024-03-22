@@ -51,14 +51,58 @@ This template serves as a starting point to integrate ML services into a secured
 
 
 ## **Installation** <a name="installation"></a>
+```bash
+git clone https://github.com/MatthieuLeNozach/api_basemodel_for_machine_learning_with_fastapi
+```
+
+### **Set up a Python virtual environment**
+Python 3.11.7 has been used to set up this template
+```bash
+cd /path/to/repository/root
+```
+
+#### OptionA: Using `venv`:
 
 
 ```bash
-git clone ...
+python3 -m venv venv
+
+# Virtual environment activation:
+source venv/bin/activate
+
+# Installation of required packages from the requirements file
+pip install -r requirements.txt
+```
+#### Option B: Using `miniconda`:
+
+```bash
+conda create --name fastapi_ml python=3.11.7
+
+# Virtual environment activation
+conda activate fastapi_ml
+
+# Installation of required packages from the requirements file
+conda install --file requirements.txt
+``` 
+
+### **Alternative: Mount project as a DevContainer in VSCode**
+
+#### Create image from the `Dockerfile`:
+```bash
+docker build -t ml_api_base:latest
+```
+
+#### Use image as a DevContainer: #TODO- instructions
+  #TODO
+
+### **Grant permissions to `run.sh`**
+
+```bash
 
 chmod +x run.sh
 
 ```
+
 
 ## **Getting started** <a name="getting-started"></a>
 
