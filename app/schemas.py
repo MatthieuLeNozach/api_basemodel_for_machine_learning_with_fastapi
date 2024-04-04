@@ -2,15 +2,14 @@
 
 from datetime import timedelta, datetime
 from typing import Optional
-from pydantic import BaseModel, EmailStr, SecretStr, Field
+from pydantic import BaseModel, EmailStr, Field
 
 
 class BaseUser(BaseModel):
     username: EmailStr
-    
+
     class Config:
         from_attributes = True
-
 
 
 class CreateUser(BaseUser):
@@ -18,18 +17,18 @@ class CreateUser(BaseUser):
     last_name: str
     password: str
     country: Optional[str] = None
-    
-    
+
+
 class CreateAdmin(BaseUser):
     first_name: str
     last_name: str
-    password: str 
+    password: str
     country: Optional[str] = None
 
-    role: str = "admin"  
-    is_active: bool = True  
-    has_access_v1: bool = True  
-    has_access_v2: bool = True  
+    role: str = "admin"
+    is_active: bool = True
+    has_access_v1: bool = True
+    has_access_v2: bool = True
 
 
 class UserInfo(BaseUser):
@@ -38,8 +37,7 @@ class UserInfo(BaseUser):
     role: str
     country: Optional[str] = None
 
-    
-    
+
 class ReadUser(UserInfo):
     id: int
     is_active: bool
@@ -47,26 +45,22 @@ class ReadUser(UserInfo):
     has_access_v2: bool
 
 
-
-    
 class ChangeUserAccessRights(BaseModel):
     is_active: bool
     has_access_v1: bool
     has_access_v2: bool
-    
+
 
 class UserVerification(BaseModel):
     password: str
     new_password: str = Field(min_length=4)
 
 
-
-
-    
 class Token(BaseModel):
     access_token: str
     token_type: str
-    
+
+
 class TokenData(BaseModel):
     username: str
     user_id: int
@@ -76,9 +70,9 @@ class TokenData(BaseModel):
     expires_delta: timedelta
 
 
-
 class PredictionInput(BaseModel):
     text: str
+
 
 class PredictionOutput(BaseModel):
     category: str
@@ -91,10 +85,10 @@ class ServiceCallCreate(BaseModel):
     request_time: datetime
     completion_time: datetime
     duration: float
-    
+
     class Config:
         from_attributes = True
-        
+
 
 class ServiceCallRead(ServiceCallCreate):
     id: int

@@ -9,16 +9,11 @@ from ..app.models import User
 from ..app.schemas import TokenData
 
 
-
 app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user
 
 
-
-
 def test_healthcheck_v2():
-    response = client.get('/mlservice/v2/healthcheck')
+    response = client.get("/mlservice/v2/healthcheck")
     print(response.json())
     assert response.status_code == status.HTTP_200_OK
-
-        

@@ -1,6 +1,7 @@
-__pycache__
+__pycache__/
 **/__pycache__/
 *.pyc
+**/*.pyc
 
 sqlite3/*
 !sqlite3/.gitkeep
