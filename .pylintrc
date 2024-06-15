@@ -1,4 +1,0 @@
-[MESSAGES CONTROL]
-disable=unused-argument, no-member, relative-beyond-top-level
-  # Customize for specific functions or patterns:
-# disable=unused-argument,func-name=check_service_v2

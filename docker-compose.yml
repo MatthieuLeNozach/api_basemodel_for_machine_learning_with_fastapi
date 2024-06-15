@@ -1,0 +1,88 @@
+version: "3.9"
+
+services:
+  web:
+    image: mattjieujln/fastapi_sentiment:web
+    command: /start # shell script used to run the service
+    volumes:
+      - .:/app
+    ports:
+      - 28010:8000
+    env_file:
+      - .env/.dev-sample
+    depends_on:
+      - redis
+      - postgres
+
+  postgres:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    env_file:
+      - .env/.dev-sample
+    ports:
+      - "5442:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+
+  celery_worker:
+    image: mattjieujln/fastapi_sentiment:worker
+    command: /start-worker
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "6899:6899"  # Expose the debugger port
+
+  celery_beat:
+    image: mattjieujln/fastapi_sentiment:beat
+    command: /start-beat
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    depends_on:
+      - redis
+      - postgres
+    ports:
+      - "6890:6899" 
+
+  flower:
+    image: mattjieujln/fastapi_sentiment:flower
+    command: /start-flower
+    volumes:
+      - .:/app
+    env_file:
+      - .env/.dev-sample
+    ports:
+      - 5557:5555
+    depends_on:
+      - redis
+      - postgres
+
+  pgadmin:
+    image: dpage/pgadmin4
+    volumes:
+      - ./compose/pgadmin/servers.json:/pgadmin4/servers.json
+    ports:
+      - "5051:80"
+    depends_on:
+      - postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@example.com
+      PGADMIN_DEFAULT_PASSWORD: password
+      PGADMIN_CONFIG_SERVER_MODE: "False"
+
+
+volumes:
+  postgres_data:

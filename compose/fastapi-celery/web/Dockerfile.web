@@ -1,0 +1,28 @@
+# Web Dockerfile
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE}
+
+COPY ./compose/fastapi-celery/web/entrypoint /entrypoint
+RUN sed -i 's/\r$//g' /entrypoint
+RUN chmod +x /entrypoint
+RUN chown fastapi:fastapi /entrypoint
+
+COPY ./compose/fastapi-celery/web/start /start
+RUN sed -i 's/\r$//g' /start
+RUN chmod +x /start
+RUN chown fastapi:fastapi /start
+
+RUN mkdir -p /app/alembic/versions
+RUN chown -R fastapi:fastapi /app/alembic/versions
+
+WORKDIR /app
+
+# copy project code
+COPY . .
+
+RUN chown -R fastapi:fastapi /app
+
+USER fastapi
+
+ENTRYPOINT ["/entrypoint"]

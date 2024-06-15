@@ -1,0 +1,45 @@
+#!/bin/bash
+
+set -o errexit
+set -o pipefail
+set -o nounset
+
+postgres_ready() {
+python << END
+import sys
+import psycopg2
+import os
+
+dbname = "postgres"
+user = "postgres"
+password = "postgres"
+host = "postgres"
+port = "5432"
+
+try:
+    conn = psycopg2.connect(
+        dbname=dbname,
+        user=user,
+        password=password,
+        host=host,
+        port=port
+    )
+    conn.close()
+except psycopg2.OperationalError as e:
+    print(f"PostgreSQL connection failed: {e}")
+    sys.exit(-1)
+sys.exit(0)
+
+END
+}
+
+until postgres_ready; do
+  >&2 echo 'Waiting for PostgreSQL to become available...'
+  sleep 1
+done
+>&2 echo 'PostgreSQL is available'
+
+# Ensure the /app/alembic/versions directory exists
+mkdir -p /app/alembic/versions
+
+exec "$@"

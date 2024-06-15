@@ -1,0 +1,30 @@
+# Web Dockerfile
+ARG BASE_IMAGE
+
+FROM ${BASE_IMAGE}
+
+COPY ./compose/fastapi-celery/celery/entrypoint-celery /entrypoint-celery
+RUN sed -i 's/\r$//g' /entrypoint-celery
+RUN chmod +x /entrypoint-celery
+RUN chown fastapi /entrypoint-celery
+
+COPY ./compose/fastapi-celery/celery/beat/start /start-beat
+RUN sed -i 's/\r$//g' /start-beat
+RUN chmod +x /start-beat
+RUN chown fastapi /start-beat
+
+RUN mkdir /app
+WORKDIR /app
+
+# copy project code
+COPY . .
+
+RUN chown -R fastapi:fastapi /app
+
+# Install redbeat
+RUN pip install celery-redbeat
+
+USER fastapi
+
+ENTRYPOINT ["/entrypoint-celery"]
+CMD ["/start-beat"]
