@@ -39,6 +39,7 @@ function build-image() {
 function build-all() {
     # Function to build all Docker images
     try-load-dotenv || { echo "Failed to load environment variables"; return 1; }
+
     # Define the target directories and whether they should be built from the base image
     declare -A target_dirs=(
         ["compose/fastapi-celery/base"]=false
@@ -47,13 +48,18 @@ function build-all() {
         ["compose/fastapi-celery/celery/beat"]=true
         ["compose/fastapi-celery/celery/flower"]=true
     )
-    # Loop through the target directories and build the images
+
+    # Build the base image first
+    build-image "$THIS_DIR/compose/fastapi-celery/base" false
+
+    # Loop through the target directories and build the images, skipping the base image
     for target_dir in "${!target_dirs[@]}"; do
-        from_base="${target_dirs[$target_dir]}"
-        build-image "$THIS_DIR/$target_dir" "$from_base"
+        if [ "$target_dir" != "compose/fastapi-celery/base" ]; then
+            from_base="${target_dirs[$target_dir]}"
+            build-image "$THIS_DIR/$target_dir" "$from_base"
+        fi
     done
 }
-
 
 function push-image() {
     # Function to push a single Docker image
@@ -104,6 +110,13 @@ function up-dev() {
     try-load-dotenv || { echo "Failed to load environment variables"; return 1; }
     generate-docker-compose
     docker compose -f "$THIS_DIR/docker-compose.yml" up
+}
+
+function down() {
+    # Function to bring up services using the template
+    try-load-dotenv || { echo "Failed to load environment variables"; return 1; }
+    generate-docker-compose
+    docker compose -f "$THIS_DIR/docker-compose.yml" down --remove-orphans
 }
 
 #================================================================#

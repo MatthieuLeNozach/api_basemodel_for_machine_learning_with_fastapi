@@ -1,9 +1,12 @@
 import logging
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends
 from sqladmin import Admin
 from project.config import settings
 from project.database import engine
 from project.fu_core import api_router
+from project.database import engine, get_async_session
+from project.inference.seeders import seed_inference_data
+from project.deps import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -17,12 +20,11 @@ def create_app() -> FastAPI:
     from project.celery_utils import create_celery
     app.celery_app = create_celery()
 
-    # @app.on_event("startup")
-    # async def on_startup():
-    #     from project.database import create_db_and_tables
-
-    #     logger.info("creating the tables...")
-    #     await create_db_and_tables()
+    @app.on_event("startup")
+    async def on_startup():
+        async with get_async_session() as session:
+            logger.info("Seeding the database with initial data...")
+            await seed_inference_data(session)
 
 
     @app.get("/")
@@ -31,9 +33,6 @@ def create_app() -> FastAPI:
 
     app.include_router(api_router, prefix=settings.API_V1_STR)
 
-    # Add the UserAdmin view to the admin interface
-    from project.sqladmin import UserAdmin
-    admin = Admin(app, engine)
-    admin.add_view(UserAdmin)
 
     return app
+

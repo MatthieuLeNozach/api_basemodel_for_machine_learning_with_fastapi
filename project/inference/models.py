@@ -2,11 +2,11 @@ from project.database import Base
 from sqlalchemy import (
     Boolean, 
     DateTime, 
-    Float, 
     ForeignKey, 
     Integer, 
     String,
-    text
+    text,
+    UUID  # Add this import
 )
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.sql import func
@@ -19,10 +19,8 @@ class AccessPolicy(Base):
     name: Mapped[str] = mapped_column(String(64), nullable=False)
     daily_api_calls: Mapped[int] = mapped_column(Integer, default=1000, server_default="1000")
     monthly_api_calls: Mapped[int] = mapped_column(Integer, default=30000, server_default="30000")
-    models: Mapped[list["InferenceModel"]] = relationship(
-        "InferenceModel",
-        back_populates="access_policies"
-    )
+    
+    
     
 class InferenceModel(Base):
     __tablename__ = "inference_model"
@@ -46,7 +44,8 @@ class InferenceModel(Base):
     )
     mlflow_id: Mapped[str] = mapped_column(String, nullable=True)
     source_url: Mapped[str] = mapped_column(String, nullable=True)
-    access_policies: Mapped[list["AccessPolicy"]] = relationship(
+    access_policy_id: Mapped[int] = mapped_column(Integer, ForeignKey("access_policy.id"))
+    access_policy: Mapped["AccessPolicy"] = relationship(
         "AccessPolicy",
         back_populates="models"
     )
@@ -54,7 +53,7 @@ class InferenceModel(Base):
 class UserAccess(Base):
     __tablename__ = "user_access"
     
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id", ondelete="CASCADE"), primary_key=True)
+    user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("user.id", ondelete="CASCADE"), primary_key=True)
     model_id: Mapped[int] = mapped_column(Integer, ForeignKey("inference_model.id", ondelete="CASCADE"), primary_key=True)
     access_policy_id: Mapped[int] = mapped_column(Integer, ForeignKey("access_policy.id"), nullable=False)
     api_calls: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
@@ -68,9 +67,7 @@ class ServiceCall(Base):
     __tablename__ = "service_call"
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     model_id: Mapped[int] = mapped_column(Integer, ForeignKey("inference_model.id"))
-    user_id: Mapped[int] = mapped_column(Integer, ForeignKey("user.id"))
+    user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("user.id"))  # Ensure this is also UUID
     time_requested: Mapped[DateTime] = mapped_column(DateTime, default=func.now())
     time_completed: Mapped[DateTime] = mapped_column(DateTime, nullable=True)
     celery_task_id: Mapped[str] = mapped_column(String, nullable=True)
-
-

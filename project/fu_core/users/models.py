@@ -5,3 +5,6 @@ from project.database import Base
 
 class User(SQLAlchemyBaseUserTableUUID, Base):
     pass
+
+
+
