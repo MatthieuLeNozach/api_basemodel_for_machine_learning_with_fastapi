@@ -6,7 +6,6 @@ from project.database import engine
 from project.fu_core import api_router
 from project.database import engine, get_async_session
 from project.inference.seeders import seed_inference_data
-from project.deps import get_session
 
 logger = logging.getLogger(__name__)
 
@@ -22,10 +21,9 @@ def create_app() -> FastAPI:
 
     @app.on_event("startup")
     async def on_startup():
-        async with get_async_session() as session:
+        async for session in get_async_session():
             logger.info("Seeding the database with initial data...")
             await seed_inference_data(session)
-
 
     @app.get("/")
     async def root():

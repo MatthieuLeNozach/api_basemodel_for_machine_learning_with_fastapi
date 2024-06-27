@@ -16,7 +16,7 @@ async def add_placeholder_model(session: AsyncSession):
         problem="regression",
         category="linear",
         version="0.0.1",
-        access_policy_id=0
+        access_policy_id=1
     )
 
 

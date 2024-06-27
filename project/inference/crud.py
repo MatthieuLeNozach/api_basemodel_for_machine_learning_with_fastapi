@@ -62,6 +62,24 @@ def add_placeholder_model():
     )
     
     
+async def create_user_access(
+    session: AsyncSession,
+    user_id: UUID,
+    model_id: int,
+    access_policy_id: int
+) -> UserAccess:
+    new_user_access = UserAccess(
+        user_id=user_id,
+        model_id=model_id,
+        access_policy_id=access_policy_id
+    )
+    session.add(new_user_access)
+    await session.commit()
+    await session.refresh(new_user_access)
+    return new_user_access
+
+
+    
 async def get_inference_model(session: AsyncSession, model_id: int) -> InferenceModel:
     result = await session.execute(select(InferenceModel).where(InferenceModel.id == model_id))
     return result.scalars().first()

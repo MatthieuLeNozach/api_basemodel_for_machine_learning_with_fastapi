@@ -30,3 +30,4 @@ class UserManager(UUIDIDMixin, BaseUserManager[models.User, uuid.UUID]):
 fastapi_users = FastAPIUsers[models.User, uuid.UUID](deps.get_user_manager, [auth_backend])
 
 current_active_user = fastapi_users.current_user(active=True)
+current_superuser = fastapi_users.current_user(active=True, superuser=True)

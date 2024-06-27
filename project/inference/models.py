@@ -45,10 +45,6 @@ class InferenceModel(Base):
     mlflow_id: Mapped[str] = mapped_column(String, nullable=True)
     source_url: Mapped[str] = mapped_column(String, nullable=True)
     access_policy_id: Mapped[int] = mapped_column(Integer, ForeignKey("access_policy.id"))
-    access_policy: Mapped["AccessPolicy"] = relationship(
-        "AccessPolicy",
-        back_populates="models"
-    )
     
 class UserAccess(Base):
     __tablename__ = "user_access"

@@ -7,10 +7,10 @@ from project.fu_core.users.models import User
 
 
 async def get_user_db(session: AsyncSession = Depends(get_async_session)):
-    yield SQLAlchemyUserDatabase(session, User)
+    return SQLAlchemyUserDatabase(session, User)
 
 
 async def get_user_manager(user_db: SQLAlchemyUserDatabase = Depends(get_user_db)):
     from project.fu_core.users import UserManager  # Import inside the function
 
-    yield UserManager(user_db)
+    return UserManager(user_db)

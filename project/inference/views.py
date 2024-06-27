@@ -1,8 +1,12 @@
-from fastapi import FastAPI, UploadFile, File
+from fastapi import FastAPI, UploadFile, File, Depends
 from fastapi.responses import JSONResponse
 from celery.result import AsyncResult
 from project.inference.tasks import run_regression
 from project.inference import inference_router
+from project.fu_core.users import models, current_superuser
+from project.inference import schemas, crud
+from sqlalchemy.ext.asyncio import AsyncSession
+from project.database import get_async_session
 
  
 @inference_router.get("/predict/")
@@ -20,3 +24,19 @@ def task_status(task_id: str):
     else:
         response = {'state': state, 'result': task.result}
     return JSONResponse(response)
+
+
+
+@inference_router.post('/pair_user_model', response_model=schemas.UserAccessResponse)
+async def pair_user_model(
+    user_access = schemas.UserAccessCreate,
+    session: AsyncSession = Depends(get_async_session),
+    superuser: models.User = Depends(current_superuser)
+):
+    user_access_db = await crud.create_user_access(
+        session,
+        user_access.user_id,
+        user_access.model_id,
+        user_access.access_policy_id
+    )
+    return  user_access_db
