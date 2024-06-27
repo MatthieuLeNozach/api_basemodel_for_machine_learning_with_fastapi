@@ -130,10 +130,11 @@ function get-revision-postgres() {
     done
     # Ensure permissions are set correctly
     docker compose run --user root web chown -R fastapi:fastapi /app/alembic/versions
+    # Apply existing migrations
+    docker compose run web alembic upgrade head
     # Run Alembic revision in the web container
     docker compose run web alembic revision --autogenerate 
 }
-
 
 function generate-servers-json() {
     # Function to generate servers.json from template
