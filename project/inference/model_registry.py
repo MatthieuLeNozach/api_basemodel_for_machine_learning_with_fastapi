@@ -1,19 +1,35 @@
-from typing import Callable, Dict
+from typing import Callable, Dict, Any
 
 # Define a type for model functions
 ModelFunction = Callable[..., list]
 
-# Dictionary to store models
-model_registry: Dict[int, ModelFunction] = {}
+# Dictionary to store models and their metadata
+model_registry: Dict[int, Dict[str, Any]] = {}
 
-def register_model(index: int):
+def register_model(
+    index: int,name: str, problem: str, category: str, version: str, access_policy_id: int
+):
     def decorator(func: ModelFunction):
-        model_registry[index] = func
+        model_registry[index] = {
+            "func": func,
+            "name": name,
+            "problem": problem,
+            "category": category,
+            "version": version,
+            "access_policy_id": access_policy_id
+        }
         return func
     return decorator
 
-
-@register_model(1)
+# Example model registration
+@register_model(
+    index=1,
+    name="linreg_placeholder",
+    problem="regression",
+    category="linear",
+    version="0.0.1",
+    access_policy_id=1
+)
 def placeholder_linreg_model():
     import numpy as np
     from sklearn.linear_model import LinearRegression

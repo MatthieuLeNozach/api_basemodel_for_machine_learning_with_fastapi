@@ -29,6 +29,10 @@ async def create_access_policy(
     return new_policy
 
 
+async def get_access_policy_by_name(session: AsyncSession, name: str) -> AccessPolicy | None:
+    result = await session.execute(select(AccessPolicy).where(AccessPolicy.name == name))
+    return result.scalars().first()
+
 
 async def create_inference_model(
     session: AsyncSession,
