@@ -71,7 +71,7 @@ services:
       - postgres
 
   pgadmin:
-    image: dpage/pgadmin4
+    image: dpage/pgadmin4:8.9
     volumes:
       - ./compose/pgadmin/servers.json:/pgadmin4/servers.json
     ports:
@@ -82,6 +82,9 @@ services:
       PGADMIN_DEFAULT_EMAIL: admin@example.com
       PGADMIN_DEFAULT_PASSWORD: password
       PGADMIN_CONFIG_SERVER_MODE: "False"
+      PGADMIN_CONFIG_WTF_CSRF_ENABLED: "False"
+      PGADMIN_CONFIG_ENHANCED_COOKIE_PROTECTION: "False"
+
 
 
 volumes:

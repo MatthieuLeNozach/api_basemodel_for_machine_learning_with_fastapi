@@ -1,8 +1,8 @@
 """empty message
 
-Revision ID: 1d4c28f87eb1
+Revision ID: ba2399826143
 Revises: 9999745327d5
-Create Date: 2024-06-27 12:43:05.504482
+Create Date: 2024-06-27 20:23:45.821417
 
 """
 from alembic import op
@@ -12,7 +12,7 @@ import fastapi_users_db_sqlalchemy  # Add this import
 
 
 # revision identifiers, used by Alembic.
-revision = '1d4c28f87eb1'
+revision = 'ba2399826143'
 down_revision = '9999745327d5'
 branch_labels = None
 depends_on = None
@@ -34,8 +34,8 @@ def upgrade():
     sa.Column('problem', sa.String(), nullable=False),
     sa.Column('category', sa.String(), nullable=True),
     sa.Column('version', sa.String(), nullable=True),
-    sa.Column('first_deployed', sa.DateTime(), server_default=sa.text('CURRENT_TIMESTAMP'), nullable=False),
-    sa.Column('last_updated', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('first_deployed', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
+    sa.Column('last_updated', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.Column('deployment_status', sa.String(), server_default='Pending', nullable=False),
     sa.Column('in_production', sa.Boolean(), server_default='False', nullable=False),
     sa.Column('mlflow_id', sa.String(), nullable=True),
@@ -49,8 +49,8 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('model_id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.UUID(), nullable=False),
-    sa.Column('time_requested', sa.DateTime(), nullable=False),
-    sa.Column('time_completed', sa.DateTime(), nullable=True),
+    sa.Column('time_requested', sa.DateTime(timezone=True), nullable=False),
+    sa.Column('time_completed', sa.DateTime(timezone=True), nullable=True),
     sa.Column('celery_task_id', sa.String(), nullable=True),
     sa.ForeignKeyConstraint(['model_id'], ['inference_model.id'], ),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ),
@@ -63,7 +63,7 @@ def upgrade():
     sa.Column('access_policy_id', sa.Integer(), nullable=False),
     sa.Column('api_calls', sa.Integer(), nullable=False),
     sa.Column('access_granted', sa.Boolean(), nullable=False),
-    sa.Column('last_accessed', sa.DateTime(), server_default=sa.text('now()'), nullable=False),
+    sa.Column('last_accessed', sa.DateTime(timezone=True), server_default=sa.text('now()'), nullable=False),
     sa.ForeignKeyConstraint(['access_policy_id'], ['access_policy.id'], ),
     sa.ForeignKeyConstraint(['model_id'], ['inference_model.id'], ondelete='CASCADE'),
     sa.ForeignKeyConstraint(['user_id'], ['user.id'], ondelete='CASCADE'),
