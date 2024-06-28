@@ -10,10 +10,23 @@ from project.inference import crud, inference_router, schemas, tasks
 from project.inference.model_registry import model_registry
 
 
-@inference_router.get("/predict-os/")
-async def predict_os():
-    task = tasks.run_regression.delay()  # Trigger the Celery task
-    return JSONResponse({"task_id": task.task_id})
+
+@inference_router.get("/health")
+async def health_check():
+    return JSONResponse({"status": "ok"})
+
+
+@inference_router.get("/predict/get_info/{model_id}")
+async def get_model_info(
+    model_id: int,
+    session: AsyncSession = Depends(get_async_session)
+):
+    if model_id not in model_registry:
+        raise HTTPException(status_code=404, detail=f"Model with id {model_id} not found")
+
+    model_info = model_registry[model_id]
+    return JSONResponse(model_info)
+
 
 
 @inference_router.get("/predict/{model_id}")

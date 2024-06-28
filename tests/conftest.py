@@ -1,3 +1,5 @@
+pytest_plugins = ['pytest_asyncio']
+
 import os
 import pytest
 from pytest_factoryboy import register
@@ -6,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from alembic.config import Config
 from alembic import command
 import logging
+from uuid import uuid4
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -13,7 +16,7 @@ logger = logging.getLogger(__name__)
 
 # Set the environment variable to use the testing configuration
 os.environ["FASTAPI_CONFIG"] = "testing"
-
+from tests.inference.fixtures import setup_inference_objects, mock_run_model
 from project.config import settings as _settings
 from project.database import Base, engine, async_session_maker
 from project import create_app
@@ -72,7 +75,27 @@ def db_session():
     return async_session_maker
 
 
+
+
 @pytest.fixture()
 def client(app):
     with TestClient(app) as client:
         yield client
+        
+        
+@pytest.fixture()
+def mock_user():
+    return type('MockUser', (), {'id': uuid4()})()
+
+
+@pytest.fixture()
+def mock_celery_task():
+    class MockTask:
+        def __init__(self):
+            self.task_id = "mocked_task_id"
+
+    return MockTask()
+
+
+
+
