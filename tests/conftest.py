@@ -49,15 +49,21 @@ def app(settings):
 def apply_migrations():
     """Apply Alembic migrations at the beginning of the test session."""
     db_path = "./test.db"
+    
+    # Delete the existing database file if it exists
     if os.path.exists(db_path):
         os.remove(db_path)
         logger.info(f"Deleted existing database file at {db_path}")
 
+    # Create a new database and apply migrations
     alembic_cfg = Config("alembic.ini")
     logger.info("Starting Alembic migrations")
     command.upgrade(alembic_cfg, "head")
     logger.info("Finished Alembic migrations")
+    
     yield
+    
+    # The database file will remain after the tests for inspection
 
     
 

@@ -35,7 +35,6 @@ class AccessPolicyFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = None
         sqlalchemy_session_persistence = "flush"
         
-    id = factory.sequence(lambda n: n)
     name = Faker("word")
     daily_api_calls = 1000
     monthly_api_calls = 30000
@@ -48,7 +47,6 @@ class InferenceModelFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = None
         sqlalchemy_session_persistence = "flush"
 
-    id = factory.Sequence(lambda n: n)
     name = Faker("word")
     problem = Faker("word")
     category = Faker("word")
@@ -59,7 +57,7 @@ class InferenceModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     in_production = False
     mlflow_id = Faker("uuid4")
     source_url = Faker("url")
-    access_policy_id = factory.SubFactory(AccessPolicyFactory)
+    access_policy_id = factory.Sequence(lambda n: n)
 
 
 class UserAccessFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -69,12 +67,13 @@ class UserAccessFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session_persistence = "flush"
 
     user_id = LazyAttribute(lambda _: uuid4())
-    model_id = factory.SubFactory(InferenceModelFactory)
-    access_policy_id = factory.SubFactory(AccessPolicyFactory)
+    model_id = factory.LazyAttribute(lambda _: InferenceModelFactory().id)
+    access_policy_id = factory.LazyAttribute(lambda _: AccessPolicyFactory().id)
     api_calls = 0
     access_granted = True
     last_accessed = LazyAttribute(lambda _: datetime.now())
-
+    
+    
 
 class ServiceCallFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
@@ -82,12 +81,11 @@ class ServiceCallFactory(factory.alchemy.SQLAlchemyModelFactory):
         sqlalchemy_session = None
         sqlalchemy_session_persistence = "flush"
 
-    id = factory.Sequence(lambda n: n)
+    #id = factory.Sequence(lambda n: n + 1000)  # Start from a high number
     model_id = factory.SubFactory(InferenceModelFactory)
     user_id = LazyAttribute(lambda _: uuid4())
     time_requested = LazyAttribute(lambda _: datetime.now())
     time_completed = None
     celery_task_id = Faker("uuid4")
-    
     
     
