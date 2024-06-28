@@ -23,7 +23,7 @@ if config.config_file_name is not None:
     fileConfig(config.config_file_name)
 
 # Determine the database URL
-database_url = os.getenv("TEST_DATABASE_URL", str(settings.DATABASE_URL))
+database_url = str(settings.DATABASE_URL)
 config.set_main_option("sqlalchemy.url", database_url)
 
 fastapi_app = create_app()

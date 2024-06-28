@@ -5,15 +5,11 @@ from fastapi.testclient import TestClient
 from sqlalchemy.ext.asyncio import AsyncSession
 from alembic.config import Config
 from alembic import command
+import logging
 
-# Import models to ensure they are registered with SQLAlchemy
-from project.fu_core.users.models import User
-from project.inference.models import (
-    UserAccess,
-    ServiceCall,
-    InferenceModel,
-    AccessPolicy
-)
+# Set up logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 # Set the environment variable to use the testing configuration
 os.environ["FASTAPI_CONFIG"] = "testing"
@@ -38,6 +34,8 @@ register(ServiceCallFactory)
 
 @pytest.fixture()
 def settings():
+    # Log the DATABASE_URL
+    logger.info("\n\nDATABASE_URL: %s\n", _settings.DATABASE_URL)
     return _settings
 
 @pytest.fixture()
@@ -48,6 +46,12 @@ def app(settings):
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations():
     """Apply Alembic migrations at the beginning of the test session."""
+    # Delete the SQLite database file if it exists
+    db_path = "./test.db"
+    if os.path.exists(db_path):
+        os.remove(db_path)
+        logger.info(f"Deleted existing database file at {db_path}")
+
     alembic_cfg = Config("alembic.ini")
     command.upgrade(alembic_cfg, "head")
     yield

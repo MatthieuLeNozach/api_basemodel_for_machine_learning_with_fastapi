@@ -203,3 +203,4 @@ cython_debug/
 
 # ruff
 .ruff_cache/
+test.db

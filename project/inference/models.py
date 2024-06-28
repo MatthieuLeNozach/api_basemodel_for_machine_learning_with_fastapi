@@ -31,10 +31,10 @@ class InferenceModel(Base):
     category: Mapped[str] = mapped_column(String, nullable=True)
     version: Mapped[str] = mapped_column(String, nullable=True)  # e.g., "1.0.0"
     first_deployed: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), nullable=False
+        DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), nullable=False
     )
     last_updated: Mapped[DateTime] = mapped_column(
-        DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False
+        DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False
     )
     deployment_status: Mapped[str] = mapped_column(
         String, nullable=False, default="Pending", server_default="Pending"
@@ -54,7 +54,7 @@ class UserAccess(Base):
     access_policy_id: Mapped[int] = mapped_column(Integer, ForeignKey("access_policy.id"), nullable=False)
     api_calls: Mapped[int] = mapped_column(Integer, default=0, nullable=False)
     access_granted: Mapped[bool] = mapped_column(Boolean, default=True, nullable=False)
-    last_accessed: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+    last_accessed: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'), onupdate=text('CURRENT_TIMESTAMP'), nullable=False)
 
 
 class ServiceCall(Base):
@@ -64,6 +64,6 @@ class ServiceCall(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True, index=True)
     model_id: Mapped[int] = mapped_column(Integer, ForeignKey("inference_model.id"))
     user_id: Mapped[UUID] = mapped_column(UUID, ForeignKey("user.id"))  # Ensure this is also UUID
-    time_requested: Mapped[DateTime] = mapped_column(DateTime(timezone=True), default=func.now())
+    time_requested: Mapped[DateTime] = mapped_column(DateTime(timezone=True), server_default=text('CURRENT_TIMESTAMP'))
     time_completed: Mapped[DateTime] = mapped_column(DateTime(timezone=True), nullable=True)
     celery_task_id: Mapped[str] = mapped_column(String, nullable=True)
