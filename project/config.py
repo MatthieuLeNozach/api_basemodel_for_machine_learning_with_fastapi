@@ -70,7 +70,7 @@ class ProductionConfig(BaseConfig):
 
 class TestingConfig(BaseConfig):
     # https://fastapi.tiangolo.com/advanced/testing-database/
-    DATABASE_URL: ClassVar[str] = "sqlite:///./test.db"
+    DATABASE_URL: ClassVar[str] = "sqlite+aiosqlite:///./test.db"
     DATABASE_CONNECT_DICT: ClassVar[dict] = {"check_same_thread": False}
 
 
