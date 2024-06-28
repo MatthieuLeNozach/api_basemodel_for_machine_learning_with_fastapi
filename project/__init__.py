@@ -14,6 +14,8 @@ def create_app() -> FastAPI:
     from project.logging import configure_logging
     configure_logging()
     
+
+    
     app = FastAPI()
 
     from project.celery_utils import create_celery

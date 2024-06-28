@@ -23,7 +23,7 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
         
     id = LazyAttribute(lambda _: uuid4())
     email = Faker("email")
-    hashed_password = LazyAttribute(lambda o: password_helper.hash(Faker("password").generate({})))
+    hashed_password = factory.LazyFunction(lambda: password_helper.hash("password"))
     is_active = True
     is_superuser = False
     is_verified = False
