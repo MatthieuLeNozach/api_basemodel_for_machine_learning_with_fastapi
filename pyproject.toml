@@ -166,3 +166,6 @@ env = [
     "POSTGRES_PORT=5432",
     "POSTGRES_DB=postgres"
 ]
+filterwarnings = [
+    "ignore::Warning"
+]
