@@ -18,8 +18,8 @@ password_helper = PasswordHelper()
 class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = User
-        sqlalchemy_session = async_session_maker()
-        sqlalchemy_session_persistence = "commit"
+        sqlalchemy_session = None
+        sqlalchemy_session_persistence = "flush"
         
     id = LazyAttribute(lambda _: uuid4())
     email = Faker("email")
@@ -32,8 +32,8 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
 class AccessPolicyFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = AccessPolicy
-        sqlalchemy_session = async_session_maker()
-        sqlalchemy_session_persistence = "commit"
+        sqlalchemy_session = None
+        sqlalchemy_session_persistence = "flush"
         
     id = factory.sequence(lambda n: n)
     name = Faker("word")
@@ -45,8 +45,8 @@ class AccessPolicyFactory(factory.alchemy.SQLAlchemyModelFactory):
 class InferenceModelFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = InferenceModel
-        sqlalchemy_session = async_session_maker()
-        sqlalchemy_session_persistence = "commit"
+        sqlalchemy_session = None
+        sqlalchemy_session_persistence = "flush"
 
     id = factory.Sequence(lambda n: n)
     name = Faker("word")
@@ -65,8 +65,8 @@ class InferenceModelFactory(factory.alchemy.SQLAlchemyModelFactory):
 class UserAccessFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = UserAccess
-        sqlalchemy_session = async_session_maker()
-        sqlalchemy_session_persistence = "commit"
+        sqlalchemy_session = None
+        sqlalchemy_session_persistence = "flush"
 
     user_id = LazyAttribute(lambda _: uuid4())
     model_id = factory.SubFactory(InferenceModelFactory)
@@ -79,8 +79,8 @@ class UserAccessFactory(factory.alchemy.SQLAlchemyModelFactory):
 class ServiceCallFactory(factory.alchemy.SQLAlchemyModelFactory):
     class Meta:
         model = ServiceCall
-        sqlalchemy_session = async_session_maker()
-        sqlalchemy_session_persistence = "commit"
+        sqlalchemy_session = None
+        sqlalchemy_session_persistence = "flush"
 
     id = factory.Sequence(lambda n: n)
     model_id = factory.SubFactory(InferenceModelFactory)
@@ -88,7 +88,6 @@ class ServiceCallFactory(factory.alchemy.SQLAlchemyModelFactory):
     time_requested = LazyAttribute(lambda _: datetime.now())
     time_completed = None
     celery_task_id = Faker("uuid4")
-    
     
     
     

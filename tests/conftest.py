@@ -43,25 +43,28 @@ def app(settings):
     app = create_app()
     return app
 
+
+
 @pytest.fixture(scope="session", autouse=True)
 def apply_migrations():
     """Apply Alembic migrations at the beginning of the test session."""
-    # Delete the SQLite database file if it exists
     db_path = "./test.db"
     if os.path.exists(db_path):
         os.remove(db_path)
         logger.info(f"Deleted existing database file at {db_path}")
 
     alembic_cfg = Config("alembic.ini")
+    logger.info("Starting Alembic migrations")
     command.upgrade(alembic_cfg, "head")
+    logger.info("Finished Alembic migrations")
     yield
-    command.downgrade(alembic_cfg, "base")
 
-@pytest.fixture()
-async def db_session(app):
-    async_session = async_session_maker()
-    async with async_session() as session:
-        yield session
+    
+
+@pytest.fixture
+def db_session():
+    return async_session_maker
+
 
 @pytest.fixture()
 def client(app):
