@@ -83,9 +83,10 @@ def client(app):
         yield client
         
         
-@pytest.fixture()
+@pytest.fixture
 def mock_user():
-    return type('MockUser', (), {'id': uuid4()})()
+    return UserFactory.build(email=f"user_{uuid4()}@example.com")
+
 
 
 @pytest.fixture()
