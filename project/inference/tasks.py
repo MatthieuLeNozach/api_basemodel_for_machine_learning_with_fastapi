@@ -8,6 +8,8 @@ from project.database import get_async_session
 from project.inference.crud import update_service_call_time_completed
 from datetime import datetime
 import logging
+import json
+from project.redis_utils import get_cache, set_cache
 logger = logging.getLogger(__name__)
 
 @shared_task
@@ -41,16 +43,35 @@ def run_regression():
 
 
 @custom_celery_task(bind=True, max_retries=3, retry_backoff=True)
-def run_model(self, model_id: int):
+def run_model(self, model_id: int, input_data: dict):
+    logger.info(f"Running model with id {model_id}")
     if model_id not in model_registry:
         logger.error(f"Model with id {model_id} not found")
         return {"error": f"Model with id {model_id} not found"}
     
     model_func = model_registry[model_id]['func']
+    model = model_func()
+    
+    # Generate a cache key based on model_id and input parameters
+    cache_key = f"model_{model_id}_result_{hash(frozenset(input_data.items()))}"
+    logger.info(f"Generated cache key: {cache_key}")
+    
+    # Check if result is already cached
+    cached_result = get_cache(cache_key)
+    if cached_result:
+        logger.info(f"Returning cached result for model {model_id}")
+        return cached_result
+    
     try:
-        result = model_func()
+        input_obj = model.Input(**input_data)
+        result = model.predict(input_obj)
         logger.info(f"Model {model_id} executed successfully with result: {result}")
-        return result
+        
+        # Cache the result with an expiration time
+        set_cache(cache_key, result.dict())
+        logger.info(f"Cached result for model {model_id} with key {cache_key}")
+        
+        return result.dict()
     except Exception as e:
         logger.error(f"Error executing model {model_id}: {e}")
         raise self.retry(exc=e)
@@ -87,11 +108,15 @@ def task_success_handler(sender, result, **kwargs):
         async for session in get_async_session():
             await update_service_call_time_completed(session, task_id, time_completed)
     
-    # Check if there's an existing event loop
-    if asyncio.get_event_loop().is_running():
+    try:
+        loop = asyncio.get_event_loop()
+    except RuntimeError:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+    
+    if loop.is_running():
         # If there's an existing event loop, create a task
-        asyncio.create_task(update_task())
+        loop.create_task(update_task())
     else:
         # Otherwise, run the coroutine
-        asyncio.run(update_task())
-
+        loop.run_until_complete(update_task())
