@@ -38,7 +38,7 @@ def override_current_superuser():
 @pytest.fixture
 def override_current_non_superuser():
     def _override_current_non_superuser():
-        return lambda: User(id=uuid4(), email="non_superuser@example.com", hashed_password="hashed_password", is_superuser=False)
+        return User(id=uuid4(), email="non_superuser@example.com", hashed_password="hashed_password", is_superuser=False)
     return _override_current_non_superuser
 
 
@@ -286,7 +286,7 @@ async def test_pair_user_model_success(client, db_session, override_current_supe
         
         
 @pytest.mark.asyncio
-async def test_pair_user_model_not_superuser(client, db_session, override_current_non_superuser):
+async def test_pair_user_model_not_superuser(client, db_session, override_current_superuser):
     async with db_session() as session:
         # Create necessary objects
         access_policy = AccessPolicyFactory.build()
@@ -299,16 +299,18 @@ async def test_pair_user_model_not_superuser(client, db_session, override_curren
         await session.commit()
         await session.refresh(model)
 
-        user = UserFactory.build(is_superuser=False)
-        session.add(user)
+        # Create a non-superuser
+        non_superuser = UserFactory.build(is_superuser=False)
+        session.add(non_superuser)
         await session.commit()
-        await session.refresh(user)
+        await session.refresh(non_superuser)
+        mock_user = User(id=uuid4(), email="test@example.com", hashed_password="hashed_password")
 
         # Apply the dependency override for current_non_superuser
-        client.app.dependency_overrides[views.current_superuser] = override_current_non_superuser()
+        client.app.dependency_overrides[views.current_superuser] = override_current_superuser(mock_user)
 
         # Log the user role for debugging
-        logger.info(f"User is_superuser: {user.is_superuser}")
+        logger.info(f"User ID: {non_superuser.id}, is_superuser: {non_superuser.is_superuser}")
 
         user_access_data = {
             "user_id": str(uuid4()),
@@ -350,11 +352,16 @@ async def test_pair_user_model_model_not_found(client, db_session, override_curr
 
         user_access_data = {
             "user_id": str(uuid4()),
-            "model_id": str(uuid4()),  # Non-existent model ID
+            "model_id": 9999,  # Non-existent model ID as an integer
             "access_policy_id": access_policy.id
         }
 
         response = client.post("/api/v1/inference/pair_user_model", json=user_access_data)
+        
+        # Log the response status and content for debugging
+        logger.info(f"Response Status Code: {response.status_code}")
+        logger.info(f"Response Content: {response.json()}")
+
         assert response.status_code == 404
         assert "detail" in response.json()
         assert "model not found" in response.json()["detail"].lower()

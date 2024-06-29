@@ -35,6 +35,6 @@ def create_app() -> FastAPI:
     app.include_router(fastapi_users_router, prefix=settings.API_V1_STR)
     app.include_router(inference_router, prefix=settings.API_V1_STR)
 
-    #logger.info("Application created with routes: %s", app.routes)
+    logger.info("Application created with routes: %s", app.routes)
     return app
 

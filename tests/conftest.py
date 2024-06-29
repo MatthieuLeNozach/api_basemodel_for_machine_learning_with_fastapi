@@ -48,7 +48,7 @@ def app(settings):
 
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="function", autouse=True)
 def apply_migrations():
     """Apply Alembic migrations at the beginning of the test session."""
     db_path = "./test.db"

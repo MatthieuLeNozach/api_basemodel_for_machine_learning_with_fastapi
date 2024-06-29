@@ -9,7 +9,8 @@ from project.fu_core.users import current_superuser, current_active_user, models
 from project.inference import crud, inference_router, schemas, tasks
 from project.inference.model_registry import model_registry
 
-
+import logging
+logger = logging.getLogger(__name__)
 
 @inference_router.get("/health")
 async def health_check():
@@ -78,10 +79,23 @@ async def pair_user_model(
     session: AsyncSession = Depends(get_async_session),
     superuser: models.User = Depends(current_superuser)
 ):
+    # Log the superuser role for debugging
+    logger.info(f"Superuser ID: {superuser.id}, is_superuser: {superuser.is_superuser}")
+
+    # Check if the current user is a superuser
+    if not superuser.is_superuser:
+        raise HTTPException(status_code=403, detail="Not enough permissions")
+    
+    # Check if the model exists
+    model = await crud.get_inference_model(session, user_access.model_id)
+    if not model:
+        raise HTTPException(status_code=404, detail="Model not found")
+
+
     user_access_db = await crud.create_user_access(
         session,
         user_access.user_id,
         user_access.model_id,
         user_access.access_policy_id
     )
-    return  user_access_db
+    return user_access_db
