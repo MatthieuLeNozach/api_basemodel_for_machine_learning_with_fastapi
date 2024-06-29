@@ -21,6 +21,8 @@ def register_model(
         return func
     return decorator
 
+
+
 # Example model registration
 @register_model(
     index=1,
@@ -46,3 +48,17 @@ def placeholder_linreg_model():
     predictions = model.predict(X)
     
     return predictions.tolist()
+
+from project.inference.ml_models.tempertaure_predictor import TemperatureModel
+# Register the temperature model
+@register_model(
+    index=2,
+    name="temperature_model",
+    problem="regression",
+    category="temperature",
+    version="1.0.0",
+    access_policy_id=1
+)
+def temperature_model_func():
+    model = TemperatureModel()
+    return model
