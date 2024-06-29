@@ -2,8 +2,7 @@ import factory
 from factory import LazyAttribute, Faker
 from uuid import uuid4
 from fastapi_users.password import PasswordHelper
-from datetime import datetime
-
+from datetime import datetime, timezone
 from project.database import async_session_maker
 from project.fu_core.users.models import User
 from project.inference.models import (
@@ -27,6 +26,19 @@ class UserFactory(factory.alchemy.SQLAlchemyModelFactory):
     is_active = True
     is_superuser = False
     is_verified = False
+    
+    
+
+
+# class AccessTokenFactory(factory.alchemy.SQLAlchemyModelFactory):
+#     class Meta:
+#         model = AccessToken
+#         sqlalchemy_session = None
+#         sqlalchemy_session_persistence = "flush"
+
+#     id = LazyAttribute(lambda _: uuid4())
+#     user_id = LazyAttribute(lambda _: uuid4())
+#     token = factory.Faker("uuid4")
     
     
 class AccessPolicyFactory(factory.alchemy.SQLAlchemyModelFactory):
@@ -84,7 +96,7 @@ class ServiceCallFactory(factory.alchemy.SQLAlchemyModelFactory):
     #id = factory.Sequence(lambda n: n + 1000)  # Start from a high number
     model_id = factory.SubFactory(InferenceModelFactory)
     user_id = LazyAttribute(lambda _: uuid4())
-    time_requested = LazyAttribute(lambda _: datetime.now())
+    time_requested = LazyAttribute(lambda _: datetime.now(timezone.utc))
     time_completed = None
     celery_task_id = Faker("uuid4")
     

@@ -3,12 +3,13 @@ from fastapi import FastAPI, Depends
 from sqladmin import Admin
 from project.config import settings
 from project.database import engine
-from project.fu_core import api_router
+from project.fu_core import fastapi_users_router
+from project.inference import inference_router
 from project.database import engine, get_async_session
 from project.inference.seeders import seed_inference_data
 
 logger = logging.getLogger(__name__)
-
+logging.getLogger("fastapi").setLevel(logging.INFO)
 
 def create_app() -> FastAPI:
     from project.logging import configure_logging
@@ -31,8 +32,9 @@ def create_app() -> FastAPI:
     async def root():
         return {"message": "hello world"}
 
-    app.include_router(api_router, prefix=settings.API_V1_STR)
+    app.include_router(fastapi_users_router, prefix=settings.API_V1_STR)
+    app.include_router(inference_router, prefix=settings.API_V1_STR)
 
-
+    logger.info("Application created with routes: %s", app.routes)
     return app
 

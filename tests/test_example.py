@@ -4,6 +4,8 @@ from sqlalchemy.future import select
 from fastapi.testclient import TestClient
 from project.fu_core.users.models import User
 from sqlalchemy import text
+
+
 def test_root_endpoint(client: TestClient):
     response = client.get("/")
     assert response.status_code == 200
