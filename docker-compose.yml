@@ -1,6 +1,15 @@
 version: "3.9"
 
 services:
+  nginx:
+    build: ./compose/nginx
+    # volumes:
+    #   - ./compose/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+    ports:
+      - "80:80"
+    depends_on:
+      - web
+
   web:
     image: mattjieujln/fastapi_sentiment:web
     command: /start # shell script used to run the service
