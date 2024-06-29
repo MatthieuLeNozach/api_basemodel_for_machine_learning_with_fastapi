@@ -71,7 +71,10 @@ async def test_get_model_info(client: TestClient, db_session, setup_inference_ob
     logger.info(f"Response Content: {response.json()}")
 
     assert response.status_code == 200
-    assert response.json() == objects['model_registry_entry']
+    
+    # Exclude the 'func' key from the comparison
+    expected_response = {k: v for k, v in objects['model_registry_entry'].items() if k != 'func'}
+    assert response.json() == expected_response
 
 
 

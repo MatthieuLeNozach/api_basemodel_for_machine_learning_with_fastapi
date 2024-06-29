@@ -26,7 +26,9 @@ async def get_model_info(
         raise HTTPException(status_code=404, detail=f"Model with id {model_id} not found")
 
     model_info = model_registry[model_id]
-    return JSONResponse(model_info)
+    # Exclude the 'func' key from the response
+    model_info_without_func = {k: v for k, v in model_info.items() if k != 'func'}
+    return JSONResponse(model_info_without_func)
 
 
 

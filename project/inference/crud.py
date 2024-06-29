@@ -1,16 +1,18 @@
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.future import select
-from sqlalchemy import func
+from sqlalchemy import func, update
 from datetime import datetime, timedelta, timezone
 from uuid import UUID
-
+from dateutil.parser import isoparse
 from project.inference.models import (
     InferenceModel, 
     ServiceCall, 
     UserAccess,
     AccessPolicy
 ) 
+import logging
 
+logger = logging.getLogger(__name__)
 
 async def create_access_policy(
     session: AsyncSession,
@@ -117,19 +119,39 @@ async def get_service_call(session: AsyncSession, service_call_id: int) -> Servi
     return result.scalars().first()
 
 
-async def update_service_call_time_completed(
-    session: AsyncSession, task_id: str, time_completed: datetime
-):
+async def update_service_call_time_completed(session: AsyncSession, task_id: str, time_completed: datetime):
     async with session.begin():
+        logger.info(f"Fetching service call with task ID: {task_id}")
         result = await session.execute(
             select(ServiceCall).where(ServiceCall.celery_task_id == task_id)
         )
         service_call = result.scalars().first()
         if service_call:
+            logger.info(f"Service call found for task ID: {task_id}, updating time_completed")
             service_call.time_completed = time_completed
             session.add(service_call)
             await session.commit()
+            logger.info(f"Service call with task ID: {task_id} updated successfully")
+        else:
+            logger.warning(f"No service call found for task ID: {task_id}")
 
+
+# async def update_service_call_time_completed(
+#     session: AsyncSession, task_id: str, time_completed: datetime
+# ):
+#     async with session.begin():
+#         result = await session.execute(
+#             select(ServiceCall).where(ServiceCall.celery_task_id == task_id)
+#         )
+#         service_call = result.scalars().first()
+#         if service_call:
+#             service_call.time_completed = time_completed
+#             session.add(service_call)
+#             await session.commit()
+#             logger.info(f"Updated ServiceCall {service_call.id} with time_completed {service_call.time_completed}")
+#         else:
+#             logger.warning(f"ServiceCall with task_id {task_id} not found")
+            
 
 async def get_user_access(
     session: AsyncSession, user_id: UUID, model_id: int

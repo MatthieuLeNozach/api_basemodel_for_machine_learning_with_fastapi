@@ -55,12 +55,16 @@ async def setup_inference_objects(db_session):
         await session.flush()
 
         # Update the model_registry with the created model
+        def mock_model_func():
+            return {"result": "success"}
+
         model_registry_entry = {
             "name": model.name,
             "problem": model.problem,
             "category": model.category,
             "version": model.version,
-            "access_policy_id": model.access_policy_id
+            "access_policy_id": model.access_policy_id,
+            "func": mock_model_func
         }
         model_registry[model.id] = model_registry_entry
 
