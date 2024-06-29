@@ -57,6 +57,10 @@ class BaseConfig:
             "schedule": 60.0  # Run every 60 seconds
         },
     }
+    REDIS_HOST: str = os.getenv('REDIS_HOST', 'redis')
+    REDIS_PORT: int = int(os.getenv('REDIS_PORT', 6379))
+    REDIS_URL: str = f"redis://{REDIS_HOST}:{REDIS_PORT}/0"
+    CACHE_EXPIRATION_TIME: int = 3600  # Default cache expiration time in seconds
 
 
 
