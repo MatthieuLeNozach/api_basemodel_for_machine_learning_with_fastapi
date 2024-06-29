@@ -9,7 +9,7 @@ from tests.factories import UserFactory, InferenceModelFactory, AccessPolicyFact
 from project.inference import views
 from unittest.mock import MagicMock
 from project.inference.models import InferenceModel, ServiceCall
-
+from project.inference.ml_models.schemas import TemperatureModelInput
 
 @pytest.fixture
 def override_current_active_user():
@@ -55,6 +55,15 @@ def test_health_check(client: TestClient):
     assert response.status_code == 200
     assert response.json() == {"status": "ok"}
 
+@pytest.fixture
+def temperature_model_input():
+    return TemperatureModelInput(
+        latitude=40,
+        longitude=-74,
+        month=6,
+        hour=14
+    )
+
 @pytest.mark.asyncio
 async def test_get_model_info(client: TestClient, db_session, setup_inference_objects):
     objects = await setup_inference_objects
@@ -78,119 +87,119 @@ async def test_get_model_info(client: TestClient, db_session, setup_inference_ob
 
 
 
-@pytest.mark.asyncio
-async def test_predict_success(
-    client, 
-    db_session, 
-    mock_run_model, 
-    monkeypatch, 
-    setup_inference_objects, 
-    override_current_active_user
-):
-    objects = await setup_inference_objects
+# @pytest.mark.asyncio
+# async def test_predict_success(
+#     client, 
+#     db_session, 
+#     mock_run_model, 
+#     monkeypatch, 
+#     setup_inference_objects, 
+#     override_current_active_user
+# ):
+#     objects = await setup_inference_objects
     
-    # Log the model ID and registry entry
-    logger.info(f"Test Model ID: {objects['model'].id}")
-    logger.info(f"Test Model Registry Entry: {objects['model_registry_entry']}")
+#     # Log the model ID and registry entry
+#     logger.info(f"Test Model ID: {objects['model'].id}")
+#     logger.info(f"Test Model Registry Entry: {objects['model_registry_entry']}")
 
-    # Apply the dependency override
-    override = override_current_active_user(objects['user'])
-    client.app.dependency_overrides[views.current_active_user] = override
+#     # Apply the dependency override
+#     override = override_current_active_user(objects['user'])
+#     client.app.dependency_overrides[views.current_active_user] = override
 
-    # Mock the model_registry with the correct model ID
-    monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
+#     # Mock the model_registry with the correct model ID
+#     monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
 
-    # Make the request
-    response = client.get(f"/api/v1/inference/predict/{objects['model'].id}")
+#     # Make the request
+#     response = client.get(f"/api/v1/inference/predict/{objects['model'].id}")
 
-    # Log the response status and content
-    logger.info(f"Response Status Code: {response.status_code}")
-    logger.info(f"Response Content: {response.json()}")
+#     # Log the response status and content
+#     logger.info(f"Response Status Code: {response.status_code}")
+#     logger.info(f"Response Content: {response.json()}")
 
-    assert response.status_code == 200
-    assert "task_id" in response.json()
-    assert response.json()["task_id"] == "mocked_task_id"
+#     assert response.status_code == 200
+#     assert "task_id" in response.json()
+#     assert response.json()["task_id"] == "mocked_task_id"
 
-    # Verify that a ServiceCall was created
-    async with db_session() as session:
-        result = await session.execute(
-            select(ServiceCall).where(ServiceCall.model_id == objects['model'].id)
-        )
-        service_call = result.scalar_one_or_none()
-        assert service_call is not None
-        assert service_call.celery_task_id == "mocked_task_id"
+#     # Verify that a ServiceCall was created
+#     async with db_session() as session:
+#         result = await session.execute(
+#             select(ServiceCall).where(ServiceCall.model_id == objects['model'].id)
+#         )
+#         service_call = result.scalar_one_or_none()
+#         assert service_call is not None
+#         assert service_call.celery_task_id == "mocked_task_id"
 
-    # Clean up the dependency override
-    client.app.dependency_overrides.clear()
+#     # Clean up the dependency override
+#     client.app.dependency_overrides.clear()
         
         
 
-@pytest.mark.asyncio
-async def test_predict_unauthorized(
-    client,
-    db_session,
-    mock_run_model,
-    monkeypatch,
-    setup_inference_objects,
-    override_unauthorized_user
-):
-    objects = await setup_inference_objects
+# @pytest.mark.asyncio
+# async def test_predict_unauthorized(
+#     client,
+#     db_session,
+#     mock_run_model,
+#     monkeypatch,
+#     setup_inference_objects,
+#     override_unauthorized_user
+# ):
+#     objects = await setup_inference_objects
     
-    # Apply the dependency override
-    client.app.dependency_overrides[views.current_active_user] = override_unauthorized_user
+#     # Apply the dependency override
+#     client.app.dependency_overrides[views.current_active_user] = override_unauthorized_user
 
-    # Mock the model_registry with the correct model ID
-    monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
+#     # Mock the model_registry with the correct model ID
+#     monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
 
-    # Make the request
-    response = client.get(f"/api/v1/inference/predict/{objects['model'].id}")
+#     # Make the request
+#     response = client.get(f"/api/v1/inference/predict/{objects['model'].id}")
     
-    # Log the response status and content for debugging
-    logger.info(f"Response Status Code: {response.status_code}")
-    logger.info(f"Response Content: {response.json()}")
+#     # Log the response status and content for debugging
+#     logger.info(f"Response Status Code: {response.status_code}")
+#     logger.info(f"Response Content: {response.json()}")
 
-    assert response.status_code == 403
-    assert "detail" in response.json()
-    assert "access" in response.json()["detail"].lower()
+#     assert response.status_code == 403
+#     assert "detail" in response.json()
+#     assert "access" in response.json()["detail"].lower()
 
-    # Clean up the dependency override
-    client.app.dependency_overrides.clear()
+#     # Clean up the dependency override
+#     client.app.dependency_overrides.clear()
     
     
     
-@pytest.mark.asyncio
-async def test_predict_model_not_found(
-    client: TestClient, 
-    db_session, 
-    monkeypatch, 
-    setup_inference_objects, 
-    override_current_active_user
-):
-    # Use a non-existent model ID
-    non_existent_model_id = 9999
+# @pytest.mark.asyncio
+# async def test_predict_model_not_found(
+#     client: TestClient, 
+#     db_session, 
+#     monkeypatch, 
+#     setup_inference_objects, 
+#     override_current_active_user
+# ):
+#     # Use a non-existent model ID
+#     non_existent_model_id = 9999
 
-    # Create a mock user
-    mock_user = User(id=uuid4(), email="test@example.com", hashed_password="hashed_password")
+#     # Create a mock user
+#     mock_user = User(id=uuid4(), email="test@example.com", hashed_password="hashed_password")
 
-    # Apply the dependency override
-    client.app.dependency_overrides[views.current_active_user] = override_current_active_user(mock_user)
+#     # Apply the dependency override
+#     client.app.dependency_overrides[views.current_active_user] = override_current_active_user(mock_user)
 
-    # Mock an empty model_registry
-    monkeypatch.setattr(views, "model_registry", {})
+#     # Mock an empty model_registry
+#     monkeypatch.setattr(views, "model_registry", {})
 
-    # Make the request
-    response = client.get(f"/api/v1/inference/predict/{non_existent_model_id}")
+#     # Make the request
+#     response = client.get(f"/api/v1/inference/predict/{non_existent_model_id}")
 
-    # Log the response status and content for debugging
-    logger.info(f"Response Status Code: {response.status_code}")
-    logger.info(f"Response Content: {response.json()}")
+#     # Log the response status and content for debugging
+#     logger.info(f"Response Status Code: {response.status_code}")
+#     logger.info(f"Response Content: {response.json()}")
 
-    assert response.status_code == 404
-    assert "detail" in response.json()
-    assert f"Model with id {non_existent_model_id} not found" in response.json()["detail"]
+#     assert response.status_code == 404
+#     assert "detail" in response.json()
+#     assert f"Model with id {non_existent_model_id} not found" in response.json()["detail"]
 
-    # Clean up the dependency override
-    client.app.dependency_overrides.clear()
+#     # Clean up the dependency override
+#     client.app.dependency_overrides.clear()
     
 
 
@@ -371,3 +380,116 @@ async def test_pair_user_model_model_not_found(client, db_session, override_curr
 
         # Clean up the dependency override
         client.app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_predict_temperature_success(
+    client: TestClient,
+    db_session,
+    mock_run_model,
+    monkeypatch,
+    setup_inference_objects,
+    override_current_active_user,
+    temperature_model_input
+):
+    objects = await setup_inference_objects
+    
+    # Log the model ID and registry entry
+    logger.info(f"Test Model ID: {objects['model'].id}")
+    logger.info(f"Test Model Registry Entry: {objects['model_registry_entry']}")
+
+    # Apply the dependency override
+    override = override_current_active_user(objects['user'])
+    client.app.dependency_overrides[views.current_active_user] = override
+
+    # Mock the model_registry with the correct model ID
+    monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
+
+    # Make the request
+    response = client.post(f"/api/v1/inference/predict-temp/{objects['model'].id}", json=temperature_model_input.dict())
+
+    # Log the response status and content
+    logger.info(f"Response Status Code: {response.status_code}")
+    logger.info(f"Response Content: {response.json()}")
+
+    assert response.status_code == 200
+    assert "task_id" in response.json()
+    assert response.json()["task_id"] == "mocked_task_id"
+
+    # Verify that a ServiceCall was created
+    async with db_session() as session:
+        result = await session.execute(
+            select(ServiceCall).where(ServiceCall.model_id == objects['model'].id)
+        )
+        service_call = result.scalar_one_or_none()
+        assert service_call is not None
+        assert service_call.celery_task_id == "mocked_task_id"
+
+    # Clean up the dependency override
+    client.app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_predict_temperature_model_not_found(
+    client: TestClient,
+    db_session,
+    monkeypatch,
+    setup_inference_objects,
+    override_current_active_user,
+    temperature_model_input
+):
+    # Use a non-existent model ID
+    non_existent_model_id = 9999
+
+    # Create a mock user
+    mock_user = User(id=uuid4(), email="test@example.com", hashed_password="hashed_password")
+
+    # Apply the dependency override
+    client.app.dependency_overrides[views.current_active_user] = override_current_active_user(mock_user)
+
+    # Mock an empty model_registry
+    monkeypatch.setattr(views, "model_registry", {})
+
+    # Make the request
+    response = client.post(f"/api/v1/inference/predict-temp/{non_existent_model_id}", json=temperature_model_input.dict())
+
+    # Log the response status and content for debugging
+    logger.info(f"Response Status Code: {response.status_code}")
+    logger.info(f"Response Content: {response.json()}")
+
+    assert response.status_code == 404
+    assert "detail" in response.json()
+    assert f"Model with id {non_existent_model_id} not found" in response.json()["detail"]
+
+    # Clean up the dependency override
+    client.app.dependency_overrides.clear()
+
+@pytest.mark.asyncio
+async def test_predict_temperature_unauthorized(
+    client: TestClient,
+    db_session,
+    mock_run_model,
+    monkeypatch,
+    setup_inference_objects,
+    override_unauthorized_user,
+    temperature_model_input
+):
+    objects = await setup_inference_objects
+    
+    # Apply the dependency override
+    client.app.dependency_overrides[views.current_active_user] = override_unauthorized_user
+
+    # Mock the model_registry with the correct model ID
+    monkeypatch.setattr(views, "model_registry", {objects['model'].id: objects['model_registry_entry']})
+
+    # Make the request
+    response = client.post(f"/api/v1/inference/predict-temp/{objects['model'].id}", json=temperature_model_input.dict())
+    
+    # Log the response status and content for debugging
+    logger.info(f"Response Status Code: {response.status_code}")
+    logger.info(f"Response Content: {response.json()}")
+
+    assert response.status_code == 403
+    assert "detail" in response.json()
+    assert "access" in response.json()["detail"].lower()
+
+    # Clean up the dependency override
+    client.app.dependency_overrides.clear()

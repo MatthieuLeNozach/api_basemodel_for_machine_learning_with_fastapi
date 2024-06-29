@@ -12,6 +12,9 @@ import json
 from project.redis_utils import get_cache, set_cache
 logger = logging.getLogger(__name__)
 
+
+
+
 @shared_task
 def run_regression():
     import numpy as np
