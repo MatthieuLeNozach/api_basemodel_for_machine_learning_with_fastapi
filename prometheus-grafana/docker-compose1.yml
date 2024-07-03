@@ -7,7 +7,7 @@ volumes:
 networks:
   front-tier:
   back-tier:
-  shared_network:
+  external_network:
     external: true
 
 services:
@@ -30,7 +30,6 @@ services:
       - cadvisor
     networks:
       - back-tier
-      - shared_network
     restart: always
 
   node-exporter:
@@ -50,7 +49,6 @@ services:
       - 9110:9100
     networks:
       - back-tier
-      - shared_network
     restart: always
     deploy:
       mode: global
@@ -63,7 +61,6 @@ services:
       - ./alertmanager/:/etc/alertmanager/
     networks:
       - back-tier
-      - shared_network
     restart: always
     command:
       - '--config.file=/etc/alertmanager/config.yml'
@@ -80,7 +77,6 @@ services:
       - 8081:8080
     networks:
       - back-tier
-      - shared_network
     restart: always
     deploy:
       mode: global
@@ -100,15 +96,4 @@ services:
     networks:
       - back-tier
       - front-tier
-      - shared_network
-    restart: always
-
-  nginx-exporter:
-    image: nginx/nginx-prometheus-exporter:latest
-    ports:
-      - 9114:9113
-    command: -nginx.scrape-uri http://nginx:8080/stub_status
-    networks:
-      - back-tier
-      - shared_network
     restart: always

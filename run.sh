@@ -104,9 +104,19 @@ function generate-docker-compose() {
     envsubst < "$template_file" > "$output_file"
 }
 
+function create-network() {
+    local network_name="$1"
+    if [ -z "$(docker network ls --filter name=^${network_name}$ --format='{{ .Name }}')" ]; then
+        echo "Creating network ${network_name}"
+        docker network create "${network_name}"
+    else
+        echo "Network ${network_name} already exists"
+    fi
+}
 
 function up-dev() {
     # Function to bring up services using the template
+    create-network shared_network
     try-load-dotenv || { echo "Failed to load environment variables"; return 1; }
     generate-docker-compose
     docker compose -f "$THIS_DIR/docker-compose.yml" up
