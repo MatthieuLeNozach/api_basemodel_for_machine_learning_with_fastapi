@@ -113,10 +113,14 @@ function up-dev() {
 }
 
 function down() {
-    # Function to bring up services using the template
-    try-load-dotenv || { echo "Failed to load environment variables"; return 1; }
-    generate-docker-compose
     docker compose -f "$THIS_DIR/docker-compose.yml" down --remove-orphans
+}
+
+function monitoring-up() {
+    docker compose -f "prometheus-grafana/docker-compose.yml" up
+}
+function monitoring-down() {
+    docker compose -f "prometheus-grafana/docker-compose.yml" down --remove-orphans
 }
 
 #================================================================#

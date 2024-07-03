@@ -1,6 +1,6 @@
 
 .python-version
-
+test.dbk
 **__pycache__/
 sqlite3/dev_db.db
 sqlite3/test_db.db
@@ -204,3 +204,6 @@ cython_debug/
 # ruff
 .ruff_cache/
 test.db
+
+
+config.monitoring
