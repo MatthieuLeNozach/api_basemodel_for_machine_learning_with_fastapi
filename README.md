@@ -11,6 +11,7 @@ A template app for async machine learning inference, with built-in user manageme
   - [Presentation](#presentation)
     - [Features](#features)
     - [Project Structure](#project-structure)
+    - [Database Structure](#database-structure)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [1. Install python dependencies](#1-install-python-dependencies)
@@ -93,7 +94,10 @@ This project aims to follow a **feature driven architecture**:
 ```
 
 
-[Insert database schema placeholder image here]
+### Database Structure
+
+
+![DB Diagram](assets/readme/db_diagram.png)
 
 
 ---
