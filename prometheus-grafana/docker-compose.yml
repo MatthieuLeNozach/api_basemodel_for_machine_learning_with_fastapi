@@ -1,12 +1,10 @@
 version: '3.9'
 
 volumes:
-    prometheus_data: {}
-    grafana_data: {}
+  prometheus_data: {}
+  grafana_data: {}
 
 networks:
-  front-tier:
-  back-tier:
   shared_network:
     external: true
 
@@ -29,7 +27,6 @@ services:
     depends_on:
       - cadvisor
     networks:
-      - back-tier
       - shared_network
     restart: always
 
@@ -47,9 +44,8 @@ services:
       - --collector.filesystem.ignored-mount-points
       - "^/(sys|proc|dev|host|etc|rootfs/var/lib/docker/containers|rootfs/var/lib/docker/overlay2|rootfs/run/docker/netns|rootfs/var/lib/docker/aufs)($$|/)"
     ports:
-      - 9110:9100
+      - 9100:9100
     networks:
-      - back-tier
       - shared_network
     restart: always
     deploy:
@@ -62,7 +58,6 @@ services:
     volumes:
       - ./alertmanager/:/etc/alertmanager/
     networks:
-      - back-tier
       - shared_network
     restart: always
     command:
@@ -79,7 +74,6 @@ services:
     ports:
       - 8081:8080
     networks:
-      - back-tier
       - shared_network
     restart: always
     deploy:
@@ -98,8 +92,6 @@ services:
     env_file:
       - ./grafana/config.monitoring
     networks:
-      - back-tier
-      - front-tier
       - shared_network
     restart: always
 
@@ -109,6 +101,5 @@ services:
       - 9114:9113
     command: -nginx.scrape-uri http://nginx:8080/stub_status
     networks:
-      - back-tier
       - shared_network
     restart: always

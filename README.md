@@ -1,6 +1,6 @@
 # Api base model for machine learning with FastAPI
 
-A template app for async machine learning inference, with built-in user management, service access policies, monitoring and enriched with various dev tools.
+A template app for async machine learning inference, with built-in user management, service access policies, monitoring and loaded with various dev tools.
 
 
 
@@ -8,8 +8,9 @@ A template app for async machine learning inference, with built-in user manageme
 
 - [Api base model for machine learning with FastAPI](#api-base-model-for-machine-learning-with-fastapi)
   - [Table of Contents](#table-of-contents)
-  - [Features](#features)
-  - [Project Structure](#project-structure)
+  - [Presentation](#presentation)
+    - [Features](#features)
+    - [Project Structure](#project-structure)
   - [Installation](#installation)
     - [Prerequisites](#prerequisites)
     - [1. Install python dependencies](#1-install-python-dependencies)
@@ -30,19 +31,27 @@ A template app for async machine learning inference, with built-in user manageme
       - [Send a request](#send-a-request)
       - [Use the `task_id` to get your response](#use-the-task_id-to-get-your-response)
     - [4. Add new ML models](#4-add-new-ml-models)
+      - [Adding new imports](#adding-new-imports)
       - [Adding the model class](#adding-the-model-class)
       - [Registering the model](#registering-the-model)
       - [Adding a model input schema](#adding-a-model-input-schema)
       - [Creating a request endpoint](#creating-a-request-endpoint)
   - [Dev Tools](#dev-tools)
-    - [Tests](#tests)
     - [Linting and pre-commit](#linting-and-pre-commit)
-  - [Monitoring](#monitoring)
-  - [What next?](#what-next)
+    - [Tests](#tests)
+  - [Monitoring (#WIP)](#monitoring-wip)
+    - [Start / Stop services](#start--stop-services)
+    - [Prometheus](#prometheus)
+    - [Grafana](#grafana)
+  - [What comes next?](#what-comes-next)
+    - [Implement CI](#implement-ci)
     - [Create a simple HTMX Frontend](#create-a-simple-htmx-frontend)
 
 
-## Features
+---
+## Presentation
+
+### Features
 
 - FastAPI async web application (separated request and response endpoints)
 - User authentication and management using FastAPI-Users
@@ -53,7 +62,7 @@ A template app for async machine learning inference, with built-in user manageme
 - Nginx as a reverse proxy (WIP)
 
 
-## Project Structure
+### Project Structure
 
 This project aims to follow a **feature driven architecture**:
 - Under `project/`, folders refer to separate routers and features
@@ -87,7 +96,7 @@ This project aims to follow a **feature driven architecture**:
 [Insert database schema placeholder image here]
 
 
-
+---
 ## Installation
 
 ### Prerequisites
@@ -157,6 +166,7 @@ docker compose up
 
 ## Development
 
+
 ### 1. Setting up the database
 
 #### Initialize async alembic migrations
@@ -197,12 +207,31 @@ docker compose up
   - Default `access_policy` is `1`
   - Default `inference_model` is `2`: a dummy temperature predictor using geo coordinates and time
 
+
 ### 3. Test the inference service
 
 #### Send a request
 1. Go to `inference/predict-temp/{model_id}` route
 2. Enter `model`: `2` and any date / coordinates
-3. Your ticket is ready! Copy `task_id` from the response 
+![Request input](assets/readme/request_input.png)
+3. Your ticket is ready! Copy `task_id` from
+
+![Request input](assets/readme/request_output.png)
+Example of request logs, showing database update and caching:
+```javascript
+celery_worker-1  | [2024-09-11 06:09:57,074: INFO/MainProcess] Task project.inference.tasks.run_model[1076c231-7dd0-4906-86c1-0e8208aa1724] received
+celery_worker-1  | [2024-09-11 06:09:57,076: INFO] [/app/project/celery_utils.py:66] Starting task run_model with args: (<@task: project.inference.tasks.run_model of default at 0x743c11a45890>, 2, {'latitude': 40, 'longitude': 120, 'month': 11, 'hour': 4}), kwargs: {}
+web-1            | INFO:     172.25.0.1:45932 - "POST /api/v1/inference/predict-temp/2 HTTP/1.1" 200
+celery_worker-1  | [2024-09-11 06:09:57,076: INFO] [/app/project/inference/tasks.py:50] Running model with id 2
+celery_worker-1  | [2024-09-11 06:09:57,643: INFO] [/app/project/inference/tasks.py:60] Generated cache key: model_2_result_-9114292356772756584
+celery_worker-1  | [2024-09-11 06:09:57,644: INFO] [/app/project/inference/tasks.py:71] Model 2 executed successfully with result: temperature=8.560720654765046
+celery_worker-1  | [2024-09-11 06:09:57,644: INFO] [/app/project/inference/tasks.py:75] Cached result for model 2 with key model_2_result_-9114292356772756584
+celery_worker-1  | [2024-09-11 06:09:57,644: INFO] [/app/project/celery_utils.py:72] Completed task run_model with result: {'temperature': 8.560720654765046}
+celery_worker-1  | [2024-09-11 06:09:57,646: INFO] [/app/project/inference/crud.py:124] Fetching service call with task ID: 1076c231-7dd0-4906-86c1-0e8208aa1724
+celery_worker-1  | [2024-09-11 06:09:57,684: INFO] [/app/project/inference/crud.py:130] Service call found for task ID: 1076c231-7dd0-4906-86c1-0e8208aa1724, updating time_completed
+celery_worker-1  | [2024-09-11 06:09:57,687: INFO] [/app/project/inference/crud.py:134] Service call with task ID: 1076c231-7dd0-4906-86c1-0e8208aa1724 updated successfully
+celery_worker-1  | [2024-09-11 06:09:57,687: INFO/ForkPoolWorker-16] Task project.inference.tasks.run_model[1076c231-7dd0-4906-86c1-0e8208aa1724] succeeded in 0.5697411990004184s: {'temperature': 8.560720654765046}
+```
 
 #### Use the `task_id` to get your response
 1. Go to `inference/task-status/{task_id}` route
@@ -214,11 +243,16 @@ docker compose up
 
 ### 4. Add new ML models
 
+#### Adding new imports
+
+- Any library used by the ML model must be registered in `/requirements-worker.txt`  
+
 #### Adding the model class
 
 1. Each model file should contain a **class with a `predict` method**
 2. Imports necessary should be **placed INSIDE the `__init__` method**, not outside the class! This way, heavy library imports only happen in the `celery worker`, won't have to be installed in any other container!
 3. Move the file containing the model in `project/inference/ml_models`
+
 
 
 #### Registering the model
@@ -230,20 +264,106 @@ This part allows to register a model in the database, map it with users and acce
 
 #### Adding a model input schema
 
+A `Pydantic` class for input models must be added to `/project/inference/schemas.py`  
+Example: 
+```py
+from pydantic import BaseModel
+
+class TemperatureModelInput(BaseModel):
+    latitude: int
+    longitude: int
+    month: int
+    hour: int
+
+```
+
 #### Creating a request endpoint
 
+- **Each new input schema needs a new post request**
+- Add a new request function at  `/project/inference/views.py`
+Example:
 
+```python
+@inference_router.post("/predict-temp/{model_id}")
+async def predict_temperature(
+    model_id: int,
+    input_data: TemperatureModelInput, ######### CHANGE THIS ############
+    current_user: models.User = Depends(current_active_user),
+    session: AsyncSession = Depends(get_async_session)
+):
+    user_id: UUID = current_user.id
+    
+    if model_id not in model_registry:
+        raise HTTPException(status_code=404, detail=f"Model with id {model_id} not found")
+    
+    # Check if the user has access to the model and update their access record
+    has_access, message = await crud.check_user_access_and_update(
+        session, user_id, model_id
+    )
+    if not has_access:
+        raise HTTPException(status_code=403, detail=message)
+    
+    # Create a service call record
+    service_call = await crud.create_service_call(session, model_id, user_id)
+    
+    task = tasks.run_model.delay(model_id, input_data.dict())
+    service_call.celery_task_id = task.task_id
+    await session.commit()
+    
+    return JSONResponse({"task_id": task.task_id})
+```
+
+
+<br>  
+
+---
 ## Dev Tools
-
-### Tests
 
 ### Linting and pre-commit
 
+```sh
+./run.sh lint
+```
+- Uses pre-commit run to perform thorough linting / formatting fixes
 
-## Monitoring
+
+### Tests
+
+```sh
+./run.sh run-tests
+```
+
+- Runs tests + generates a coverage report
+- pure unit tests using factories and monkeypatching
 
 
-## What next?
+
+
+
+## Monitoring (#WIP)
+
+### Start / Stop services
+
+```sh
+./run.sh monitoring-up
+
+./run.sh monitoring-down
+```
+
+### Prometheus
+
+- Access at `http://localhost:9090`
+- Stores the metrics from FastAPI (backend), Nginx (proxy) CAdvisor (system)  
+
+### Grafana
+
+- Access at `http://localhost:3000`, default credentials: `admin` / `admin`
+- Render the metrics into dashboards
+
+## What comes next?
+
+### Implement CI
+- Add on-push Github Actions
 
 ### Create a simple HTMX Frontend
 - How to handle login data storage when logging in via web page?
@@ -253,7 +373,3 @@ This part allows to register a model in the database, map it with users and acce
 - How to handle async request / response end points when rendering a web page? 
 
 
-
-```sh
-
-```

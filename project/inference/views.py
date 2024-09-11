@@ -9,6 +9,9 @@ from project.fu_core.users import current_superuser, current_active_user, models
 from project.inference import crud, inference_router, schemas, tasks
 from project.inference.model_registry import model_registry
 
+from project.inference.schemas import TemperatureModelInput
+
+
 import logging
 logger = logging.getLogger(__name__)
 
@@ -61,7 +64,6 @@ async def predict(
     return JSONResponse({"task_id": task.task_id})
 
 
-from project.inference.ml_models.schemas import TemperatureModelInput
 
 @inference_router.post("/predict-temp/{model_id}")
 async def predict_temperature(
